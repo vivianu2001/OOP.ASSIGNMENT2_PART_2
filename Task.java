@@ -6,89 +6,81 @@ import java.util.concurrent.FutureTask;
  * Extension of Future task with extra requirements
  * @param <V> generic
  */
-public class Task<V> extends FutureTask <V> implements Comparable<Task<V>> {
+public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
     private final TaskType taskType;
-
 
 
     /**
      * default constructor
+     *
      * @param callable
      * @param taskType
      */
-    protected Task(Callable<V> callable,TaskType taskType)
-{
-    super(callable);
-    this.taskType=taskType;
+    protected Task(Callable<V> callable, TaskType taskType) {
+        super(callable);
+        this.taskType = taskType;
 
 
-}
+    }
 
-    /** Constructs new task instance from Callable with priority taskType
+    /**
+     * Constructs new task instance from Callable with priority taskType
      *
      * @param callable to compute
      * @param taskType scheduling priority
-     * @return
      * @param <V>
-     */
-    public static <V> Task <V> createTask(Callable<V> callable,TaskType taskType)
-{
-    if(callable==null)
-    {
-        throw new NullPointerException();
-    }
-
-    return new Task<V>(callable,taskType);
-}
-
-    /**
-     * Constructs new task instance with lowes priority
-     * @param callable
      * @return
-     * @param <V>
      */
-
-    public static <V> Task <V> create(Callable<V> callable)
-    {
-        if(callable==null)
-        {
+    public static <V> Task<V> createTask(Callable<V> callable, TaskType taskType) {
+        if (callable == null) {
             throw new NullPointerException();
         }
 
-        return new Task<V>(callable,null);
+        return new Task<V>(callable, taskType);
     }
 
-    public int getPriority()
-    {
-        if(taskType!=null) {
+    /**
+     * Constructs new task instance with lowes priority
+     *
+     * @param callable
+     * @param <V>
+     * @return
+     */
+
+    public static <V> Task<V> create(Callable<V> callable) {
+        if (callable == null) {
+            throw new NullPointerException();
+        }
+
+        return new Task<V>(callable, null);
+    }
+
+    public int getPriority() {
+        if (taskType != null) {
             return taskType.getPriorityValue();
         }
         return 9;
     }
 
 
-    public int compareTo(Task<V> o)
-    {
-        return Integer.compare(this.getPriority(),o.getPriority());
+    public int compareTo(Task<V> o) {
+        return Integer.compare(this.getPriority(), o.getPriority());
     }
 
-    public String toString()
-    {
-        return String.format("%s-=priority-%d,",Task.class.getSimpleName(),getPriority());
+    public String toString() {
+        return String.format("%s-=priority-%d,", Task.class.getSimpleName(), getPriority());
     }
 
-public boolean equals(Object o)
-{
-    if(this==o)
-    {
-        return true;
-    }
-    if(o==null|| getClass()!=o.getClass())
-        return false;
-    Task<?> task=(Task<?>)o;
-    return taskType==task.taskType;
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+            return false;
+        Task<?> task = (Task<?>) o;
+        return taskType == task.taskType;
 
-}
+    }
 
 
 }
