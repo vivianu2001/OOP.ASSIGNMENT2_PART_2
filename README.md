@@ -8,3 +8,13 @@ A user may set the priority of a thread using the method: public final void setP
 
 
 # Task
+
+This class is a subclass of FutureTask and implements the Comparable interface. It has a field taskType which is a scheduling priority for the task, and methods to create instances of Task with a specified priority or with a default lowest priority. The compareTo method compares the priorities of two tasks using their getPriority method, and the equals method compares the taskType field of two tasks. The toString method returns a string representation of the task with its priority included.
+FutureTask is a cancellable asynchronous computation that implements Runnable and Future. It represents the result of an asynchronous computation, and can be used to execute a computation in a different thread and retrieve the result when it is done.
+By extending FutureTask, the Task class can use all the methods and functionality of FutureTask and customize or add additional behavior as needed.
+
+# Custom Executer
+
+subclass of ThreadPoolExecutor that uses a PriorityBlockingQueue as its work queue and has additional methods for submitting tasks with a specified priority. It has a field maxPriority to track the highest priority of a task that has been submitted to the executor, and the submit methods use the trackMaxPriority method to update the maxPriority field when a new task is submitted. The gracefullyTerminate method shuts down the executor and allows all submitted tasks to complete before terminating.
+
+
