@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>C:/Users/lbala/eclipse-workspace/OOP.ASSIGNMENT2_PART_2</OriginalElement>
+  <nodes>
+    <node x="-150.0" y="47.0">CustomExecutor</node>
+    <node x="-150.0" y="280.0">Task</node>
+    <node x="-150.0" y="513.0">Tests</node>
+    <node x="175.0" y="280.0">TaskType</node>
+  </nodes>
+  <notes />
+  <edges />
+  <settings layout="Hierarchic" zoom="1.4820512820512821" showDependencies="false" x="120.5" y="338.8737024221453" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Constructors</Category>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+    <Category>Properties</Category>
+  </Categories>
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+
