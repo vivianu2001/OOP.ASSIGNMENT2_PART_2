@@ -17,4 +17,6 @@ By extending FutureTask, the Task class can use all the methods and functionalit
 
 subclass of ThreadPoolExecutor that uses a PriorityBlockingQueue as its work queue and has additional methods for submitting tasks with a specified priority. It has a field maxPriority to track the highest priority of a task that has been submitted to the executor, and the submit methods use the trackMaxPriority method to update the maxPriority field when a new task is submitted. The gracefullyTerminate method shuts down the executor and allows all submitted tasks to complete before terminating.
 
+# Diagram uml
 
+![ASSIGNMENT2_PART_2.png](..%2F..%2FDesktop%2FASSIGNMENT2_PART_2.png)
