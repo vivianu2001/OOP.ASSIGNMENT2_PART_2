@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 
     public static final Logger logger = Logger.getAnonymousLogger();
 
-
     private final AtomicInteger maxPriority = new AtomicInteger();
 
     /**
