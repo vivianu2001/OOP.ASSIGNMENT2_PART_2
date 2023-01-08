@@ -19,4 +19,4 @@ subclass of ThreadPoolExecutor that uses a PriorityBlockingQueue as its work que
 
 # Diagram uml
 
-![ASSIGNMENT2_PART_2.png](..%2F..%2FDesktop%2FASSIGNMENT2_PART_2.png)
+![ASSIGNMENT2_PART_2.png](ASSIGNMENT2_PART_2.png)
