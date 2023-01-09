@@ -1,5 +1,6 @@
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicLong;
 
 /***
  * Extension of Future task with extra requirements
@@ -7,6 +8,10 @@ import java.util.concurrent.FutureTask;
  */
 public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
     private final TaskType taskType;
+
+    private static final AtomicLong counter= new AtomicLong();
+
+    private final long instanceNumber;
 
 
     /**
@@ -18,6 +23,7 @@ public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
     protected Task(Callable<V> callable, TaskType taskType) {
         super(callable);
         this.taskType = taskType;
+        this.instanceNumber= counter.incrementAndGet();
 
 
     }
@@ -57,7 +63,7 @@ public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
         if (taskType != null) {
             return taskType.getPriorityValue();
         }
-        return 9;
+        return 10;
     }
 
     /**
@@ -69,6 +75,7 @@ public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
      * @throws ClassCastException if the specified object's type prevents it from being compared to this object
      */
     public int compareTo(Task<V> o) {
+
         return Integer.compare(this.getPriority(), o.getPriority());
     }
     /**
@@ -77,7 +84,7 @@ public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
      * @return a string representation of this task
      */
     public String toString() {
-        return String.format("%s-=priority-%d,", Task.class.getSimpleName(), getPriority());
+        return String.format("%s-#%s-=priority=%d,", Task.class.getSimpleName(), instanceNumber,getPriority());
     }
     /**
      * Indicates whether some other object is "equal to" this one.
@@ -92,7 +99,7 @@ public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
         if (o == null || getClass() != o.getClass())
             return false;
         Task<?> task = (Task<?>) o;
-        return taskType == task.taskType;
+        return instanceNumber== task.instanceNumber;
 
     }
 
