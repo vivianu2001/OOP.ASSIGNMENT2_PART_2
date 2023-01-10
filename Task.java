@@ -36,7 +36,7 @@ public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
      * @param <V>
      * @return
      */
-    public static <V> Task<V> createTask(Callable<V> callable, TaskType taskType) {
+    public static <V> Task<V> create(Callable<V> callable, TaskType taskType) {
         if (callable == null) {
             throw new NullPointerException();
         }
@@ -63,7 +63,7 @@ public class Task<V> extends FutureTask<V> implements Comparable<Task<V>> {
         if (taskType != null) {
             return taskType.getPriorityValue();
         }
-        return 10;
+        return 9;
     }
 
     /**

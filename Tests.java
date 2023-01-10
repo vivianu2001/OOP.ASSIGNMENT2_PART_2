@@ -1,5 +1,7 @@
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.testng.asserts.Assertion;
 
 import java.util.concurrent.*;
 import java.util.logging.Logger;
@@ -15,8 +17,8 @@ public class Tests {
      * the test logs the current maximum priority of tasks in the CustomExecutor and shuts it down.
      */
     public void partialTest() {
-        CustomExecutor customExecutor = new CustomExecutor();
-        Task<Integer> task = Task.createTask(() -> {
+        CustomExecutor customExecutor = CustomExecutor.newDefultExecuter();
+        Task<Integer> simpletask = Task.create(() -> {
             int sum = 0;
             for (int i = 1; i <= 1000; i++) {
                 sum += i;
@@ -24,7 +26,7 @@ public class Tests {
             return sum;
         }, TaskType.COMPUTATIONAL);
 
-        Future<Integer> sumTask = customExecutor.submit(task);
+        Future<Integer> sumTask = customExecutor.submit(simpletask);
         final int sum;
         try {
             sum = sumTask.get(1, TimeUnit.MILLISECONDS);
@@ -32,38 +34,49 @@ public class Tests {
             throw new RuntimeException(e);
         }
         logger.info(() -> "Sum of 1 through 10 = " + sum);
-        //assert (sum == 55);
 
-        Callable<Double> callable1 = () -> 1000 * Math.pow(1.02, 5);
+        Assertions.assertThrows(RejectedExecutionException.class, () -> {
+            customExecutor.submit(() -> {
+                Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
+                return 1000 * Math.pow(1.02, 5);
+            }, TaskType.COMPUTATIONAL);
 
-        Callable<String> callable2 = () -> {
-            StringBuilder sb = new StringBuilder("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            return sb.reverse().toString();
-        };
-
-        Future<Double> priceTask = customExecutor.submit(callable1, TaskType.COMPUTATIONAL);
-        Future<String> reverseTask = customExecutor.submit(callable2, TaskType.IO);
-
-        Task task1 = new Task(callable1, TaskType.COMPUTATIONAL);
-        Task task2 = new Task(callable2, TaskType.IO);
-
-        final Double totalPrice;
-        final String reversed;
-        try {
-            totalPrice = priceTask.get();
-            reversed = reverseTask.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-        logger.info(() -> "Reversed String = " + reversed);
-        logger.info(() -> String.valueOf("Total Price = " + totalPrice));
-
-        logger.info(() -> "Current maximum priority = " +
-                customExecutor.getCurrentMax());
-
-        customExecutor.gracefullyTerminate();
-
+        });
     }
+
+
+        @Test
+        public void partialTest2()
+        {
+            Callable<Double> callable1 = () -> 1000 * Math.pow(1.02, 5);
+
+            Callable<String> callable2 = () -> {
+                StringBuilder sb = new StringBuilder("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+                return sb.reverse().toString();
+            };
+
+            CustomExecutor customExecutor = CustomExecutor.newDefultExecuter();
+            Future<Double> priceTask = customExecutor.submit(callable1, TaskType.COMPUTATIONAL);
+            Future<String> reverseTask = customExecutor.submit(callable2, TaskType.IO);
+
+
+            final Double totalPrice;
+            final String reversed;
+            try {
+                totalPrice = priceTask.get();
+                reversed = reverseTask.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            logger.info(() -> "Reversed String = " + reversed);
+            logger.info(() -> "Total Price = " + totalPrice);
+
+            logger.info(() -> "Current maximum priority = " +
+                    customExecutor.getCurrentMax());
+
+
+
+        }
 
     @Test
     /**
@@ -79,7 +92,7 @@ public class Tests {
      method to shut down the executor.
      */
     public void testCustomExecutor() {
-        CustomExecutor customExecutor = new CustomExecutor();
+        CustomExecutor customExecutor = CustomExecutor.newDefultExecuter();
         Callable<Integer> callable1 = () -> {
             int sum = 0;
             for (int i = 1; i <= 100; i++) {
@@ -97,7 +110,7 @@ public class Tests {
         Future<String> reverseTask = customExecutor.submit(callable2, TaskType.IO);
 
         Task task1 = new Task(callable1, TaskType.COMPUTATIONAL);
-        Task task2 = new Task(callable2, TaskType.COMPUTATIONAL);
+        Task task2 = new Task(callable2, TaskType.IO);
 
         final int sum;
         final String reversed;
@@ -112,45 +125,80 @@ public class Tests {
 
         logger.info(() -> "Current maximum priority = " +
                 customExecutor.getCurrentMax());
-        customExecutor.gracefullyTerminate();
+
     }
 
 
     @Test
-    public void test3() {
-        CustomExecutor customExecutor = new CustomExecutor();
+    public void scheduling() {
 
-        customExecutor.submit(() -> {
+        logger.info("Testing scheduling priority...");
+
+        CustomExecutor customExecutor2 = CustomExecutor.newSingleThreadExecuter();
+
+        customExecutor2.submit(() -> {
             Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
             return null;
-        }, TaskType.OTHER);
+        }, TaskType.COMPUTATIONAL);
 
 
-        customExecutor.submit(() -> {
+        customExecutor2.submit(() -> {
             Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
             return null;
         }, TaskType.IO);
 
 
-        customExecutor.submit(() -> {
+        customExecutor2.submit(() -> {
+            Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
+            return null;
+        }, TaskType.OTHER);
+
+
+        customExecutor2.submit(() -> {
+            Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
+            return null;
+        }, TaskType.COMPUTATIONAL);
+
+        customExecutor2.submit(() -> {
+            Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
+            return null;
+        }, TaskType.COMPUTATIONAL);
+
+        customExecutor2.submit(() -> {
             Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
             return null;
         }, TaskType.COMPUTATIONAL);
 
 
-        customExecutor.submit(() -> {
-            Thread.sleep(TimeUnit.MILLISECONDS.toMillis(10));
-            return null;
-        }, TaskType.COMPUTATIONAL);
+        customExecutor2.shutdown();
 
-        customExecutor.shutdown();
+
         try {
-            boolean terminated = customExecutor.awaitTermination(1, TimeUnit.MINUTES);
+            boolean terminated = customExecutor2.awaitTermination(1, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
+        logger.info("Scheduling priority test finished");
+
     }
+
+    @Test
+
+    public void automaticTermination()
+    {
+        CustomExecutor customExecutor= CustomExecutor.newDefultExecuter();
+        customExecutor.submit(()-> {
+            throw new RuntimeException("Exception");
+        },TaskType.COMPUTATIONAL);
+
+    }
+
+
+
+
+
+
 
 
 }

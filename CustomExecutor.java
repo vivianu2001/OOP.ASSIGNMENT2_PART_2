@@ -1,6 +1,8 @@
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -8,14 +10,11 @@ import java.util.logging.Logger;
  */
 public class CustomExecutor extends ThreadPoolExecutor {
 
-
     private ConcurrentHashMap<Integer, Integer> priorityMap = new ConcurrentHashMap<>();
-
-
+    AtomicReference<Map.Entry<Integer,Integer>> maxPriority=new AtomicReference<>();
     public static final Logger logger = Logger.getAnonymousLogger();
     private boolean autoTerminate;
 
-    private final AtomicInteger maxPriority = new AtomicInteger(11);
 
     /**
      * Creates a new custom executor with the default number of threads.
@@ -24,12 +23,17 @@ public class CustomExecutor extends ThreadPoolExecutor {
      *
      * @see Runtime#availableProcessors()
      */
-    public CustomExecutor() {
-        this(Runtime.getRuntime().availableProcessors() / 2, Math.max(Runtime.getRuntime().availableProcessors() - 1, 1),
-                300L, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<>());
-
+    public static CustomExecutor newDefultExecuter() {
+        return  new CustomExecutor( Runtime.getRuntime().availableProcessors() / 2,
+                Math.max(Runtime.getRuntime().availableProcessors() - 1, 1),
+                300L, TimeUnit.MILLISECONDS, true);
 
     }
+
+   public static CustomExecutor newSingleThreadExecuter()
+   {
+       return new CustomExecutor(1,1,0L,TimeUnit.MILLISECONDS,false);
+   }
 
     /**
      * Creates a new custom executor with the specified number of threads and work queue.
@@ -39,7 +43,6 @@ public class CustomExecutor extends ThreadPoolExecutor {
      * @param maxiumPoolSize the maximum number of threads to allow in the pool
      * @param keepAliveTime  the maximum time that excess idle threads will wait for new tasks before terminating
      * @param unit           the time unit for the keepAliveTime argument
-     * @param workQueue      the queue to use for holding tasks before they are executed. This queue will hold only the {@link Runnable} tasks submitted by the {@link #execute(Runnable)} method
      * @throws IllegalArgumentException if one of the following holds:<br>
      *                                  {@code corePoolSize < 0}<br>
      *                                  {@code keepAliveTime < 0}<br>
@@ -47,10 +50,9 @@ public class CustomExecutor extends ThreadPoolExecutor {
      *                                  {@code maximumPoolSize < corePoolSize}
      * @throws NullPointerException     if workQueue is null
      */
-    public CustomExecutor(int corePoolSize, int maxiumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-        super(corePoolSize, maxiumPoolSize, keepAliveTime, unit, new PriorityBlockingQueue<>());
-
-
+    public CustomExecutor(int corePoolSize, int maxiumPoolSize, long keepAliveTime, TimeUnit unit,boolean autoTerminate) {
+        super(corePoolSize, maxiumPoolSize, keepAliveTime, unit,new PriorityBlockingQueue<>());
+        this.autoTerminate=autoTerminate;
     }
 
     /**
@@ -67,7 +69,7 @@ public class CustomExecutor extends ThreadPoolExecutor {
             throw new NullPointerException();
         }
 
-        Task<T> futureTask = Task.createTask(task, taskType);
+        Task<T> futureTask = Task.create(task, taskType);
         logger.info("Task Type is:" + taskType.toString());
         execute(trackMaxPriority(futureTask));
         return futureTask;
@@ -90,6 +92,23 @@ public class CustomExecutor extends ThreadPoolExecutor {
         execute(trackMaxPriority(task));
         return task;
     }
+
+    public <T> Future <T> submit(Callable<T> task)
+    {
+        if(task==null)
+        {
+            throw new NullPointerException();
+        }
+
+        Task ftask=Task.create(task);
+        return  ftask;
+    }
+
+
+
+
+
+
     /**
      * Updates the maximum priority of the tasks submitted to this executor.
      * If the priority of the given task is greater than the current maximum priority, the maximum priority is updated to the task's priority.
@@ -104,77 +123,58 @@ public class CustomExecutor extends ThreadPoolExecutor {
      * @return the current maximum priority of the tasks submitted to this executor
      */
     public int getCurrentMax() {
-        if (maxPriority != null) {
-
-            return maxPriority.get();
-        } else {
-            return 11;
+        Map.Entry<Integer,Integer> max=maxPriority.get();
+        if(max!=null)
+        {
+            return max.getKey();
         }
+        return 0;
+
     }
 
 
     protected <T> Task<T> trackMaxPriority(Task<T> customTask) {
 
-        if (priorityMap.get(customTask.getPriority()) == null) {
-            priorityMap.put(customTask.getPriority(), 1);
-
-        } else {
-            priorityMap.compute(customTask.getPriority(), (k, v) -> v + 1);
-
-        }
+        maxPriority.getAndUpdate(maxPriority -> {
+            priorityMap.compute(customTask.getPriority(), (k, v) -> v == null ? 1 : v + 1);
 
 
-
-        for (Map.Entry<Integer, Integer> entry : priorityMap.entrySet()) {
-            if (entry.getValue() != null && entry.getValue() > 0) {
-                int key = entry.getKey();
-                maxPriority.getAndUpdate(current -> Math.min(current, key));
-
-            }
-        }
+            return priorityMap.entrySet().stream().filter(entry -> entry.getValue() != null && entry.getValue() > 0).
+                    min(Comparator.comparingInt(Map.Entry::getKey)).orElse(null);
+        });
 
         logger.info("Submitted task: '" + customTask + "', max priority: " + getCurrentMax());
-
         return customTask;
     }
 
 
     protected void afterExecute(Runnable r, Throwable t) {
 
-
         if (t != null && autoTerminate) {
             shutdown();
         }
 
-        Task customTask = (Task) r;
+
+        Task task= (Task) r;
+            maxPriority.getAndUpdate(maxPriority -> {
+
+                priorityMap.compute(task.getPriority(), (k, v) -> v == null ? 1 : v - 1);
 
 
+                Map.Entry<Integer, Integer> nextMaxPriority = priorityMap.entrySet().stream().filter(entry -> entry.getValue() != null && entry.getValue() > 0).
+                        min(Comparator.comparingInt(Map.Entry::getKey)).orElse(null);
 
-        priorityMap.computeIfPresent(customTask.getPriority(), (k, v) -> v - 1);
-
-
-        for (Map.Entry<Integer, Integer> entry : priorityMap.entrySet()) {
-            if (entry.getValue() != null && entry.getValue() > 0) {
-                int key = entry.getKey();
-                if (key < maxPriority.get()) {
-                    maxPriority.getAndUpdate(current -> key);
-
+                if (nextMaxPriority == null && autoTerminate) {
+                    shutdown();
                 }
-            }
+                return nextMaxPriority;
+            });
+
+            logger.info("Completed task: '" + task + "', max priority: " + getCurrentMax());
         }
 
-        logger.info("Completed task: '" + customTask + "', max priority: " + getCurrentMax());
 
 
-    }
-
-
-    /**
-     * Gracefully terminates this executor by initiating an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
-     */
-    public void gracefullyTerminate() {
-        shutdown();
-    }
 
 
 }
