@@ -11,10 +11,8 @@ public class Tests {
 
     @Test
     /**
-     * This test creates a CustomExecutor object and uses it to submit two tasks - one to compute
-     * the sum of the integers from 1 to 10 and the other to reverse a string. The test then
-     * retrieves the results of these tasks, logs them, and checks that the sum is correct. Finally,
-     * the test logs the current maximum priority of tasks in the CustomExecutor and shuts it down.
+     * Test for gracefully terminate, after two tasks are excute the CustomExecuter shutdown,
+     * return exception ExecutionException by request
      */
     public void partialTest() {
         CustomExecutor customExecutor = CustomExecutor.newDefultExecuter();
@@ -193,12 +191,6 @@ public class Tests {
         },TaskType.COMPUTATIONAL);
 
     }
-
-
-
-
-
-
 
 
 }
