@@ -20,3 +20,9 @@ subclass of ThreadPoolExecutor that uses a PriorityBlockingQueue as its work que
 # Diagram uml
 
 ![ASSIGNMENT2_PART_2.png](ASSIGNMENT2_PART_2.png)
+
+# Test
+The main test of the assignment is to schedule tasks by priority, the test use one single thread to make the process more clear to the user.
+
+<img width="649" alt="Screen Shot 2023-01-10 at 17 17 00" src="https://user-images.githubusercontent.com/118671563/211590749-f3ff5039-db6e-49ed-b5bd-60cf0c4f206c.png">
+
